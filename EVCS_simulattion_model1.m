@@ -262,6 +262,11 @@ for h = 2: Horizon
             % time step
             if EV_alreadyWaiting_count>0
                 EV_alreadyWaiting{1,h} = EV_alreadyWaiting{1,h-1};
+            elseif EV_toCharge_count>0 && length(EVCS_state{1,h}) == 1
+                % one slot is empty to charge the EV to be charged variable
+                EVCS_state{nEVCS,h}(2,1) = EV_toCharge{1,h}(1,1);
+                EV_toCharge{1,h}(1) = [];
+                EV_toCharge_count = length(EV_toCharge{1,h});
             end
             
             % If there any EV to be charged left for that time step then

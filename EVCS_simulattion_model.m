@@ -1,20 +1,23 @@
-load('EV_data.mat');
+% load('EV_data.mat');
+clc 
+clear
+%  EV_Profile = EV_behaviour.EV_LP;
 
- EV_Profile = EV_behaviour.EV_LP;
-
-Horizon = 8760;
+Horizon = 24;
 nEVs = 20;
 
-EV_Profile = int16(EV_Profile(1:nEVs,1:Horizon)./8.0667);
+ load('test_EVdata.mat');
+% EV_Profile = int16(EV_Profile(1:nEVs,1:Horizon)./8.0667);
 
 % nEVCS_decision = sdpvar(1,1);
 
 nEVCS = 1;
+nEVCS_max = 2;
 %% variables that describe the state 
-EVCS_state = cell(nEVCS,Horizon);
-EV_toCharge = cell(nEVCS,Horizon);
-EV_stillCharging = cell(nEVCS,Horizon);
-EV_alreadyWaiting =cell(nEVCS,Horizon);
+EVCS_state = cell(nEVCS_max,Horizon);
+EV_toCharge = cell(1,Horizon);
+EV_stillCharging = cell(nEVCS_max,Horizon);
+EV_alreadyWaiting =cell(1,Horizon);
 
 waiting_time = zeros(1,Horizon);
 waiting = 0;
@@ -58,7 +61,7 @@ for h = 2: Horizon
         disp('You have two EVs charging ')
         EV_Profile(index(a,1),h+1) = 1;
     end
-    
+ 
     % how many EVs are still charging from the previous time step by
     % comparing EVCS state and EVs to be charged the index of the EV that
     % is charging will be hold in ind variable w.r.t EV to charge variable
@@ -73,10 +76,7 @@ for h = 2: Horizon
     
     %% case where the EVCS slot is full 
     if EV_stillCharging_count==2
-        
-%          [EV_alreadyWaiting,EV_stillCharging,EV_toCharge,EVCS_state,EV_Profile] = ...
-%     Get_nextEVCS(EV_alreadyWaiting,EV_stillCharging,EV_toCharge,EVCS_state,EV_Profile,Horizon);
-        
+               
         % The EVs that are charging in the previous time step will continue
         % to charge
         EVCS_state{nEVCS,h} = EVCS_state{1,h-1};
@@ -94,6 +94,16 @@ for h = 2: Horizon
                 % put one here assign to 2 evcs if there are naz left to
                 % charge evs assign it to waiting variable
                 % assign remaining evs to be charge to waiting variable
+                m = 2;
+                while (EV_toCharge_count>0 || EV_alreadyWaiting_count > 0) && m <= nEVCS_max
+                    
+                    
+                    [EV_alreadyWaiting,EV_stillCharging,EV_toCharge,EVCS_state,EV_Profile,EV_toCharge_count...
+                        ,EV_alreadyWaiting_count ] = Get_nextEVCS(EV_alreadyWaiting,EV_stillCharging,EV_toCharge,...
+                        EVCS_state,EV_Profile,m,h);
+                    m = m+1;
+                end
+                
             for c = 1: EV_toCharge_count
                 EV_alreadyWaiting{1,h}(c,1) = EV_toCharge{1,h}(c,1);
 %                 EV_Profile(EV_toCharge{1,h}(c,1),h+1) = 1;
@@ -111,6 +121,20 @@ for h = 2: Horizon
             % put the funciton here and assign the waiting cars to the
             % second evcs and the remaining from to charge and if there are
             % waiting cars and to charge left any assign it to waiting cars 
+            m = 2;
+            while (EV_toCharge_count>0 || EV_alreadyWaiting_count > 0) && m <= nEVCS_max
+                
+                
+                [EV_alreadyWaiting,EV_stillCharging,EV_toCharge,EVCS_state,EV_Profile,EV_toCharge_count...
+                    ,EV_alreadyWaiting_count ] = Get_nextEVCS(EV_alreadyWaiting,EV_stillCharging,EV_toCharge,...
+                    EVCS_state,EV_Profile,m,h);
+                m = m+1;
+            end
+            
+            if EV_alreadyWaiting_count>0
+                EV_alreadyWaiting{1,h} = EV_alreadyWaiting{1,h-1};
+                EV_alreadyWaiting_count = length(EV_alreadyWaiting{1,h-1});
+            end
             
             if EV_toCharge_count>0
             for c = 1: EV_toCharge_count
@@ -162,6 +186,17 @@ for h = 2: Horizon
                 % evs to second evcs and the reamaining to charge are
                 % sassigned to waiting variable
                 
+                m = 2;
+                while (EV_toCharge_count>0 || EV_alreadyWaiting_count > 0) && m <= nEVCS_max
+                    
+                    
+                    [EV_alreadyWaiting,EV_stillCharging,EV_toCharge,EVCS_state,EV_Profile,EV_toCharge_count...
+                        ,EV_alreadyWaiting_count ] = Get_nextEVCS(EV_alreadyWaiting,EV_stillCharging,EV_toCharge,...
+                        EVCS_state,EV_Profile,m,h);
+                    m = m+1;
+                end
+                
+%                 EV_toCharge_count = length
                 % after assigning to the remaining EVCS if tehre are any
                 % more left then assign it top waiting variable
             for c = 1: EV_toCharge_count
@@ -191,7 +226,17 @@ for h = 2: Horizon
                 % put the function here to assign remaining waiting cars to
                 % second evcs and the reamining ev to charge to second evcs
                 % if there are any left agin assign it to waiting variable
+                m = 2;
+                while (EV_toCharge_count>0 || EV_alreadyWaiting_count > 0) && m <= nEVCS_max
+                    
+                    
+                    [EV_alreadyWaiting,EV_stillCharging,EV_toCharge,EVCS_state,EV_Profile,EV_toCharge_count...
+                        ,EV_alreadyWaiting_count ] = Get_nextEVCS(EV_alreadyWaiting,EV_stillCharging,EV_toCharge,...
+                        EVCS_state,EV_Profile,nEVCS,h);
+                    m = m+1;
+                end
             end
+            
             if EV_alreadyWaiting_count>0
                 % if there are any left waiting cars after assigning it to
                 % second evcs then assign these to that time step waiting
@@ -229,9 +274,20 @@ for h = 2: Horizon
             for c = 1:EV_toCharge_count
                      EVCS_state{nEVCS,h}(c,1) = EV_toCharge{1,h}(1,1);
                      EV_toCharge{1,h}(1) = [ ];
-                     if c ==2 
+                     EV_toCharge_count = length(EV_toCharge{1,h});
+                     if c ==2
                          % add the function here that asigns the remaining
-                         % ev to charge to second evcs 
+                         % ev to charge to second evcs
+                         
+                         m = 2;
+                         while (EV_toCharge_count>0 || EV_alreadyWaiting_count > 0) && m <= nEVCS_max
+                             
+                             
+                             [EV_alreadyWaiting,EV_stillCharging,EV_toCharge,EVCS_state,EV_Profile,EV_toCharge_count...
+                                 ,EV_alreadyWaiting_count ] = Get_nextEVCS(EV_alreadyWaiting,EV_stillCharging,EV_toCharge,...
+                                 EVCS_state,EV_Profile,m,h);
+                             m = m+1;
+                         end
                          break
                      end
             end
@@ -262,11 +318,20 @@ for h = 2: Horizon
                  if c == 2
                      % add the function here that assigns the remaining
                      % waiting cars to second evcs and other ev to charge
-                     % to second evcs 
-                     break 
+                     % to second evcs
+                     m = 2;
+                     while (EV_toCharge_count>0 || EV_alreadyWaiting_count > 0) && m <= nEVCS_max
+                         
+                         
+                         [EV_alreadyWaiting,EV_stillCharging,EV_toCharge,EVCS_state,EV_Profile,EV_toCharge_count...
+                             ,EV_alreadyWaiting_count ] = Get_nextEVCS(EV_alreadyWaiting,EV_stillCharging,EV_toCharge,...
+                             EVCS_state,EV_Profile,nEVCS,h);
+                         m = m+1;
+                     end
+                     break
                  end
             end
-            EV_alreadyWaiting_count = length(EV_alreadyWaiting{1,h-1});
+           EV_alreadyWaiting_count = length(EV_alreadyWaiting{1,h-1}); 
             
             % after assigning the waiting cars and updating the variable if
             % there are any waiting cars then they are carried to the next
@@ -274,14 +339,28 @@ for h = 2: Horizon
             
             if EV_alreadyWaiting_count>0
                 EV_alreadyWaiting{1,h} = EV_alreadyWaiting{1,h-1};
-
-            
+                EV_alreadyWaiting_count = length(EV_alreadyWaiting{1,h});
+            elseif EV_toCharge_count>0 && length(EVCS_state{1,h}) == 1
+                % one slot is empty to charge the EV to be charged variable
+                EVCS_state{nEVCS,h}(2,1) = EV_toCharge{1,h}(1,1);
+                EV_toCharge{1,h}(1) = [];
+                EV_toCharge_count = length(EV_toCharge{1,h});
             end
-            EV_alreadyWaiting_count = length(EV_alreadyWaiting{1,h});
             % If there any EV to be charged left for that time step then
             % they are added to the end of already waiting variable
             
-            if EV_toCharge_count>0 
+            if EV_toCharge_count>0
+                
+                m = 2;
+                while (EV_toCharge_count>0 || EV_alreadyWaiting_count > 0) && m <= nEVCS_max
+                    
+                    
+                    [EV_alreadyWaiting,EV_stillCharging,EV_toCharge,EVCS_state,EV_Profile,EV_toCharge_count...
+                        ,EV_alreadyWaiting_count ] = Get_nextEVCS(EV_alreadyWaiting,EV_stillCharging,EV_toCharge,...
+                        EVCS_state,EV_Profile,m,h);
+                    m = m+1;
+                end
+                
                 % assign if there still any to be charged EV to waiting
                 % cars variable
             for c = 1:EV_toCharge_count
