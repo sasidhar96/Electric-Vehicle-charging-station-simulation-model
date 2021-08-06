@@ -41,7 +41,7 @@ if EV_stillCharging_count == 1
         
         EVCS_state{m,h}(2,1) = EV_alreadyWaiting{1,h-1}(1,1);
         EV_alreadyWaiting{1,h-1}(1) = []; % epmty the assigned value
-        EV_alreadyWaiting_count = length(EV_alreadyWaiting_count{1,h-1});      
+        EV_alreadyWaiting_count = length(EV_alreadyWaiting{1,h-1});      
     end
 end
 

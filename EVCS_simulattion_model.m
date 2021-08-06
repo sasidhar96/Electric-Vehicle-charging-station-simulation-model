@@ -1,8 +1,8 @@
  load('EV_data.mat');
   EV_Profile = EV_behaviour.EV_LP;
 
-Horizon = 2300;
-nEVs = 50;
+Horizon = 8760;
+nEVs = 100;
 
 %  load('test_EVdata.mat');
  EV_Profile = int16(EV_Profile(1:nEVs,1:Horizon)./8.0667);
@@ -10,7 +10,7 @@ nEVs = 50;
 % nEVCS_decision = sdpvar(1,1);
 
 nEVCS = 1;
-nEVCS_max = 4;
+nEVCS_max = 10;
 %% variables that describe the state 
 EVCS_state = cell(nEVCS_max,Horizon);
 EV_toCharge = cell(1,Horizon);
@@ -46,7 +46,7 @@ end
 
 for h = 2: Horizon
     
-    if h == 2291
+    if h == 6683
         disp('ENter debug mode')
     end
     % how many Evs are to be charged 
@@ -63,9 +63,9 @@ for h = 2: Horizon
         temp_ind =EV_toCharge{1,h}(index(a,1)); 
         EV_Profile(temp_ind,h+1) = 1;
        EV_Profile(temp_ind,h) = 0;
+    end
         EV_toCharge{1,h} = find(EV_Profile(:,h)==1);
         EV_toCharge_count = length(EV_toCharge{1,h});
-    end
  
     % how many EVs are still charging from the previous time step by
     % comparing EVCS state and EVs to be charged the index of the EV that
