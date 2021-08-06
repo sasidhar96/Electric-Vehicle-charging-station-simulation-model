@@ -10,7 +10,7 @@ EV_stillCharging{1,h} = C;
     % length of it
     EV_stillCharging_count = length(EV_stillCharging{1,h});
 
-EV_alreadyWaiting_count =  length(EV_alreadyWaiting{1,h}); % how many are waiting 
+EV_alreadyWaiting_count =  length(EV_alreadyWaiting{1,h-1}); % how many are waiting 
 
 if EV_stillCharging_count==2
     % there are already 2  EVs charging at the new EVCS
@@ -65,6 +65,9 @@ if EV_stillCharging_count == 0
     if EV_alreadyWaiting_count >=1
         for c = 1:EV_alreadyWaiting_count
             
+            if h == 2291 && m==2
+                disp('asas')
+            end
             EVCS_state{m,h}(c,1) = EV_alreadyWaiting{1,h-1}(1,1);
             EV_alreadyWaiting{1,h-1}(1) = [];
             
@@ -77,7 +80,7 @@ if EV_stillCharging_count == 0
             end
         end
         EV_alreadyWaiting_count = length(EV_alreadyWaiting{1,h-1});
-        if EV_alreadyWaiting==0 && EV_toCharge_count>0 && length(EVCS_state{1,h}) == 1
+        if EV_alreadyWaiting_count==0 && EV_toCharge_count>0 && length(EVCS_state{m,h}) == 1
             EVCS_state{m,h}(2,1) = EV_toCharge{1,h}(1,1);
             EV_toCharge{1,h}(1) = [];
             EV_toCharge_count = length(EV_toCharge{1,h});

@@ -1,18 +1,16 @@
-% load('EV_data.mat');
-clc 
-clear
-%  EV_Profile = EV_behaviour.EV_LP;
+ load('EV_data.mat');
+  EV_Profile = EV_behaviour.EV_LP;
 
-Horizon = 24;
-nEVs = 20;
+Horizon = 2300;
+nEVs = 50;
 
- load('test_EVdata.mat');
-% EV_Profile = int16(EV_Profile(1:nEVs,1:Horizon)./8.0667);
+%  load('test_EVdata.mat');
+ EV_Profile = int16(EV_Profile(1:nEVs,1:Horizon)./8.0667);
 
 % nEVCS_decision = sdpvar(1,1);
 
 nEVCS = 1;
-nEVCS_max = 2;
+nEVCS_max = 4;
 %% variables that describe the state 
 EVCS_state = cell(nEVCS_max,Horizon);
 EV_toCharge = cell(1,Horizon);
@@ -48,6 +46,9 @@ end
 
 for h = 2: Horizon
     
+    if h == 2291
+        disp('ENter debug mode')
+    end
     % how many Evs are to be charged 
     EV_toCharge{1,h} = find(EV_Profile(:,h)==1);
     
@@ -59,7 +60,11 @@ for h = 2: Horizon
     % change the next time step to 1 for that EV 
     for a = 1 : length(index)
         disp('You have two EVs charging ')
-        EV_Profile(index(a,1),h+1) = 1;
+        temp_ind =EV_toCharge{1,h}(index(a,1)); 
+        EV_Profile(temp_ind,h+1) = 1;
+       EV_Profile(temp_ind,h) = 0;
+        EV_toCharge{1,h} = find(EV_Profile(:,h)==1);
+        EV_toCharge_count = length(EV_toCharge{1,h});
     end
  
     % how many EVs are still charging from the previous time step by
@@ -80,6 +85,9 @@ for h = 2: Horizon
         % The EVs that are charging in the previous time step will continue
         % to charge
         EVCS_state{nEVCS,h} = EVCS_state{1,h-1};
+        EV_toCharge{1,h}(ind(1,1)) = [];
+        EV_toCharge{1,h}(ind(2,1)-1) = [];
+        EV_toCharge_count = length(EV_toCharge{1,h});
         
         if EV_alreadyWaiting_count ==0
             % no EVs are waiting from the previous timestep
@@ -308,7 +316,7 @@ for h = 2: Horizon
             % variable 
             
             % add the waiting cars to the state 
-            
+            switch_state = 0;
 %             
             for c = 1:EV_alreadyWaiting_count
                 
@@ -319,13 +327,15 @@ for h = 2: Horizon
                      % add the function here that assigns the remaining
                      % waiting cars to second evcs and other ev to charge
                      % to second evcs
+                     switch_state = 1;
                      m = 2;
+                     EV_alreadyWaiting_count = length(EV_alreadyWaiting{1,h-1});
                      while (EV_toCharge_count>0 || EV_alreadyWaiting_count > 0) && m <= nEVCS_max
                          
                          
                          [EV_alreadyWaiting,EV_stillCharging,EV_toCharge,EVCS_state,EV_Profile,EV_toCharge_count...
                              ,EV_alreadyWaiting_count ] = Get_nextEVCS(EV_alreadyWaiting,EV_stillCharging,EV_toCharge,...
-                             EVCS_state,EV_Profile,nEVCS,h);
+                             EVCS_state,EV_Profile,m,h);
                          m = m+1;
                      end
                      break
@@ -336,7 +346,7 @@ for h = 2: Horizon
             % after assigning the waiting cars and updating the variable if
             % there are any waiting cars then they are carried to the next
             % time step
-            
+            EV_toCharge_count = length(EV_toCharge{1,h});
             if EV_alreadyWaiting_count>0
                 EV_alreadyWaiting{1,h} = EV_alreadyWaiting{1,h-1};
                 EV_alreadyWaiting_count = length(EV_alreadyWaiting{1,h});
@@ -352,8 +362,7 @@ for h = 2: Horizon
             if EV_toCharge_count>0
                 
                 m = 2;
-                while (EV_toCharge_count>0 || EV_alreadyWaiting_count > 0) && m <= nEVCS_max
-                    
+                while (EV_toCharge_count>0 || EV_alreadyWaiting_count > 0) && m <= nEVCS_max && switch_state == 0                    
                     
                     [EV_alreadyWaiting,EV_stillCharging,EV_toCharge,EVCS_state,EV_Profile,EV_toCharge_count...
                         ,EV_alreadyWaiting_count ] = Get_nextEVCS(EV_alreadyWaiting,EV_stillCharging,EV_toCharge,...
@@ -371,8 +380,12 @@ for h = 2: Horizon
         end    
     end
     EV_alreadyWaiting_count = length(EV_alreadyWaiting{1,h});
-    waiting = waiting + EV_alreadyWaiting_count;
-    waiting_time(1,h) = waiting;
+    if EV_alreadyWaiting_count == 0 
+        waiting = 0;
+    else
+        waiting =  EV_alreadyWaiting_count;
+    end
+    waiting_time(1,h) = waiting;   
     
 end
 
