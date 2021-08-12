@@ -1,12 +1,24 @@
 load('EV_data.mat');
 
- EV_Profile = EV_behaviour.EV_LP;
-
+ EV_P = EV_behaviour.EV_LP;
 Horizon = 8760;
-nEVs = 50;
+EV_P = int16(EV_P(:,1:Horizon)./8.0667);
+ nEVs = 10;
+ rise_rate = 0.3;
+EV_number = zeros(1,10);
+iter = 10;
+waiting_time = zeros(iter,Horizon);
+EVCS_state_iter = cell(iter,Horizon);
 
-EV_Profile = int16(EV_Profile(1:nEVs,1:Horizon)./8.0667);
-
+for i = 1:iter
+    disp('Running simulation for EVs')
+    nEVs = ceil(nEVs+(rise_rate*nEVs));
+    if nEVs >100
+        break
+    end
+   EV_number(1,i)= nEVs;
+    disp(nEVs)
+EV_Profile = EV_P(1:nEVs,:);
 
 nEVCS = 1;
 %% variables that describe the state 
@@ -16,7 +28,7 @@ EV_toCharge = cell(1,Horizon);
 EV_stillCharging = cell(1,Horizon);
 EV_alreadyWaiting =cell(1,Horizon); % this is important to kno which cars are waiting
 
-waiting_time = zeros(1,Horizon);
+
 waiting = 0;
 EV_state = zeros(nEVs,Horizon); 
 
@@ -60,12 +72,13 @@ for h = 2: Horizon
     % If there is a waiting EV that needs to be charged for 2 hours then
     % change the next time step to 1 for that EV 
     for a = 1 : length(index)
-        disp('You have two EVs charging ')
-        EV_Profile(index(a,1),h+1) = 1;
-        EV_Profile(index(a,1),h) = 0;
-        EV_toCharge{1,h} = find(EV_Profile(:,h)==1);
-        EV_toCharge_count = length(EV_toCharge{1,h});
+
+        temp_ind =EV_toCharge{1,h}(index(a,1)); 
+        EV_Profile(temp_ind,h+1) = 1;
+        EV_Profile(temp_ind,h) = 0;
     end
+    EV_toCharge{1,h} = find(EV_Profile(:,h)==1);
+    EV_toCharge_count = length(EV_toCharge{1,h});
     % how many EVs are still charging from the previous time step by
     % comparing EVCS state and EVs to be charged the index of the EV that
     % is charging will be hold in ind variable w.r.t EV to charge variable
@@ -292,49 +305,48 @@ for h = 2: Horizon
         end    
     end
     EV_alreadyWaiting_count = length(EV_alreadyWaiting{1,h});
-%     waiting = waiting + EV_alreadyWaiting_count;
+    
     if EV_alreadyWaiting_count == 0 
         waiting = 0;
     else
         waiting =  EV_alreadyWaiting_count;
     end
-    waiting_time(1,h) = waiting;    
+    waiting_time(i,h) = waiting;    
     
+    EVCS_state_iter(i,:) = EVCS_state(:,:);
+    
+    % getting the EV profile for that state 
     charging_car_indices = EVCS_state{1,h};
-    charging_car_indices_count = length(charging_car_indices);
-    for i = 1:charging_car_indices_count
-        if charging_car_indices(i,1) == 0
-            disp('Wreck more')
-            disp(h)
-        else
-        EV_state(charging_car_indices(i,1),h) =-1;
-        end
+    charging_car_indices_count = length(charging_car_indices); 
+    for j = 1:charging_car_indices_count
+        
+        EV_state(charging_car_indices(j,1),h) =-1;
     end
     
     waiting_car_indices = EV_alreadyWaiting{1,h};
     waiting_car_indices_count = length(waiting_car_indices);
     
-    for i = 1:waiting_car_indices_count
-        if waiting_car_indices(i,1) == 0
-            disp('wreck')
-            disp(h)
-        else
-        EV_state(waiting_car_indices(i,1),h) = 1;
-        end
+    for j = 1:waiting_car_indices_count
+        EV_state(waiting_car_indices(j,1),h) = 1;
     end
 
 end
-
-EVCS_decision = intvar(1,1);
-EVCS_cost = 10000;
-Objective = EVCS_cost+EVCS_decision*EVCS_cost;
-
-CS = [];
-
-for h = 1: Horizon
-    
-    CS = [CS,waiting_time(1,h)-5<=2*EVCS_decision];
+EVCS_state_iter(i,:) = EVCS_state;
 end
 
-sol = optimize(CS,Objective);
-total_EVCS = 1+value(EVCS_decision);
+max_waiting_time_forEVRise = max(waiting_time,[],2);
+%% dummy 
+
+% EVCS_decision = intvar(1,1);
+% EVCS_cost = 10000;
+% Objective = EVCS_cost+EVCS_decision*EVCS_cost;
+% 
+% CS = [];
+% 
+% for h = 1: Horizon
+%     
+%     CS = [CS,waiting_time(1,h)-5<=2*EVCS_decision];
+% end
+% 
+% sol = optimize(CS,Objective);
+% total_EVCS = 1+value(EVCS_decision);

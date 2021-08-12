@@ -1,5 +1,6 @@
- load('EV_data.mat');
-  EV_Profile = EV_behaviour.EV_LP;
+function [EVCS_state,waiting_time]=getSimulationvalues(nEVs,nEVCS_max,EV_Profile) 
+% load('EV_data.mat');
+%   EV_Profile = EV_behaviour.EV_LP;
 
 Horizon = 8760;
 nEVs = 100;
@@ -10,7 +11,7 @@ nEVs = 100;
 % nEVCS_decision = sdpvar(1,1);
 
 nEVCS = 1;
-nEVCS_max = 10;
+nEVCS_max = 5;
 %% variables that describe the state 
 EVCS_state = cell(nEVCS_max,Horizon);
 EV_toCharge = cell(1,Horizon);
@@ -59,7 +60,7 @@ for h = 2: Horizon
     % If there is a waiting EV that needs to be charged for 2 hours then
     % change the next time step to 1 for that EV 
     for a = 1 : length(index)
-        disp('You have two EVs charging ')
+       % disp('You have two EVs charging ')
         temp_ind =EV_toCharge{1,h}(index(a,1)); 
         EV_Profile(temp_ind,h+1) = 1;
        EV_Profile(temp_ind,h) = 0;
@@ -388,4 +389,4 @@ for h = 2: Horizon
     waiting_time(1,h) = waiting;   
     
 end
-
+end

@@ -1,8 +1,8 @@
- load('EV_data.mat');
-  EV_Profile = EV_behaviour.EV_LP;
-
-Horizon = 2300;
-nEVs = 50;
+function [EVCS_state,waiting_time]=getSimulationvalues(nEVs,nEVCS_max,EV_Profile,Horizon) 
+% load('EV_data.mat');
+%   EV_Profile = EV_behaviour.EV_LP;
+% Horizon = 8760;
+% nEVs = 100;
 
 %  load('test_EVdata.mat');
  EV_Profile = int16(EV_Profile(1:nEVs,1:Horizon)./8.0667);
@@ -10,7 +10,7 @@ nEVs = 50;
 % nEVCS_decision = sdpvar(1,1);
 
 nEVCS = 1;
-nEVCS_max = 4;
+% nEVCS_max = 5;
 %% variables that describe the state 
 EVCS_state = cell(nEVCS_max,Horizon);
 EV_toCharge = cell(1,Horizon);
@@ -46,7 +46,7 @@ end
 
 for h = 2: Horizon
     
-    if h == 2290
+    if h == 6683
         disp('ENter debug mode')
     end
     % how many Evs are to be charged 
@@ -59,13 +59,13 @@ for h = 2: Horizon
     % If there is a waiting EV that needs to be charged for 2 hours then
     % change the next time step to 1 for that EV 
     for a = 1 : length(index)
-        disp('You have two EVs charging ')
+       % disp('You have two EVs charging ')
         temp_ind =EV_toCharge{1,h}(index(a,1)); 
         EV_Profile(temp_ind,h+1) = 1;
        EV_Profile(temp_ind,h) = 0;
+    end
         EV_toCharge{1,h} = find(EV_Profile(:,h)==1);
         EV_toCharge_count = length(EV_toCharge{1,h});
-    end
  
     % how many EVs are still charging from the previous time step by
     % comparing EVCS state and EVs to be charged the index of the EV that
@@ -346,6 +346,7 @@ for h = 2: Horizon
             % after assigning the waiting cars and updating the variable if
             % there are any waiting cars then they are carried to the next
             % time step
+            
             EV_toCharge_count = length(EV_toCharge{1,h});
             if EV_alreadyWaiting_count>0
                 EV_alreadyWaiting{1,h} = EV_alreadyWaiting{1,h-1};
@@ -388,4 +389,4 @@ for h = 2: Horizon
     waiting_time(1,h) = waiting;   
     
 end
-
+end
